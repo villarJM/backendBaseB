@@ -1,17 +1,12 @@
 //http://localhost:4000/api/v1/messages
 const {Router} = require('express')
 const router = Router()
+const {rootMessage, hiMessage, byeMessage} = require('../controllers/messages')
 
-router.get('/', (req, res) => {
-    res.send('Mensaje')
-})//End Point
+router.get('/', rootMessage)
 
-router.get('/hi', (req, res) => {
-    res.send('Hola mundo')
-})//End Point
+router.get('/hi', hiMessage)//End Point
 
-router.get('/bye', (req, res) => {
-    res.send('Adiós mundo')
-})//End Point
+router.get('/bye', byeMessage)//End Point
 
 module.exports = router
