@@ -5,7 +5,7 @@ const {rootMessage, hiMessage, byeMessage, postMessage, putMessage, deleteMessag
 
 router.get('/', rootMessage)
 
-router.get('/hi', hiMessage)//End Point//consultas
+router.get('/hi/:name/:edad', hiMessage)//End Point//consultas
 
 router.get('/bye', byeMessage)//End Point
 
