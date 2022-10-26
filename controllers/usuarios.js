@@ -1,5 +1,6 @@
 const { request, response } = require("express");
 const { query } = require("../db/connection");
+const bcryptjs = require("bcryptjs")
 const pool = require("../db/connection")
 
 const getUsers = async (req = request, res = response) => {
@@ -82,6 +83,9 @@ const addUser = async (req = request, res = response) => {
         res.status(400).json({msg: "Faltan Datos"})
         return
     }
+    const salt = bcryptjs.genSaltSync()
+    const contrasenaCifrada = bcryptjs.hashSync(Contrasena, salt)
+
     let conn;
 
     try {
@@ -95,7 +99,7 @@ const addUser = async (req = request, res = response) => {
             return
         }
         //generamos la consulta
-        const result = await conn.query(`INSERT INTO Usuarios(Nombre, Apellidos, Edad, Genero, Usuario, Contrasena, Fecha_Nacimiento, Activo) VALUES ('${Nombre}', '${Apellidos}', ${Edad}, '${Genero}', '${Usuario}', '${Contrasena}', '${Fecha_Nacimiento}', '${Activo}')`, (error) => {if(error) throw error})
+        const result = await conn.query(`INSERT INTO Usuarios(Nombre, Apellidos, Edad, Genero, Usuario, Contrasena, Fecha_Nacimiento, Activo) VALUES ('${Nombre}', '${Apellidos}', ${Edad}, '${Genero}', '${Usuario}', '${contrasenaCifrada}', '${Fecha_Nacimiento}', '${Activo}')`, (error) => {if(error) throw error})
 
         if (result.affectedRows === 0) {//En caso de no haber resgistros lo informamos
             res.status(404).json({msg: `No se pudo agregar el usuarios con el Nombre ${Nombre}`})
