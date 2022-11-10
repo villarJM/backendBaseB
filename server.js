@@ -1,6 +1,7 @@
 const express = require('express')
 const messagesRouter = require('./routes/messages')
 const usuariosRouter = require('./routes/usuarios')
+const plantsRouter = require('./routes/plantas')
 const cors = require('cors')
 
 class Server {
@@ -9,7 +10,8 @@ class Server {
         this.port = process.env.PORT
         this.paths = {
             messages:"/api/v1/messages",
-            usuarios:"/api/v1/usuarios"
+            usuarios:"/api/v1/usuarios",
+            plantas:"/api/v2/plantas"
         }
         this.middleware()
         this.routes()
@@ -21,6 +23,7 @@ class Server {
         //})//End Point
         this.app.use(this.paths.messages, messagesRouter)
         this.app.use(this.paths.usuarios, usuariosRouter)
+        this.app.use(this.paths.plantas, plantsRouter)
     }
 
     middleware(){
