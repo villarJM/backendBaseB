@@ -1,7 +1,8 @@
 const { request, response } = require("express");
 const { query } = require("../db/connection");
 const bcryptjs = require("bcryptjs")
-const pool = require("../db/connection")
+const pool = require("../db/connection");
+const modelUsuarios = require("../models/usuarios");
 
 const getUsers = async (req = request, res = response) => {
     let conn;
@@ -9,7 +10,7 @@ const getUsers = async (req = request, res = response) => {
     try {
         conn = await pool.getConnection()//Realizamos la conexión
 
-        const [users] = await conn.query("SELECT * FROM Usuarios", (error) => {if(error) throw error})
+        const [users] = await conn.query(modelUsuarios.queryGetUsers, (error) => {if(error) throw error})
 
         if (users.length === 0) {//En caso de no haber resgistros lo informamos
             res.status(404).json({msg: "No exiten usuarios registrados"})
@@ -33,7 +34,7 @@ const getUsersByID = async (req = request, res = response) => {
     try {
         conn = await pool.getConnection()//Realizamos la conexión
         //generamos la consulta
-        const [users] = await conn.query(`SELECT * FROM Usuarios WHERE ID = ${id}`, (error) => {if(error) throw error})
+        const [users] = await conn.query(modelUsuarios.queryGetUserByID,[id], (error) => {if(error) throw error})
 
         console.log(users)
         if (!users) {//En caso de no haber resgistros lo informamos
@@ -57,7 +58,7 @@ const deleteUserByID = async (req = request, res = response) => {
     try {
         conn = await pool.getConnection()//Realizamos la conexión
         //generamos la consulta
-        const result = await conn.query(`UPDATE Usuarios SET Activo = 'N' WHERE ID = ${id}`, (error) => {if(error) throw error})
+        const result = await conn.query(modelUsuarios.queryDeleteUserByID,[id], (error) => {if(error) throw error})
 
         console.log(result.affectedRows)
         if (result.affectedRows === 0) {//En caso de no haber resgistros lo informamos
@@ -76,8 +77,7 @@ const deleteUserByID = async (req = request, res = response) => {
 
 }
 const addUser = async (req = request, res = response) => {
-    const {Nombre, Apellidos, Edad, Genero, Usuario, Contrasena, Fecha_Nacimiento = '1990-01-01', Activo} = req.body//URI params
-
+    const {Nombre, Apellidos, Edad, Genero = '', Usuario, Contrasena, Fecha_Nacimiento = '1990-01-01', Activo} = req.body//URI params
     if(!Nombre || !Apellidos || !Edad || !Usuario || !Contrasena || !Activo){
         res.status(400).json({msg: "Faltan Datos"})
         return
@@ -91,14 +91,14 @@ const addUser = async (req = request, res = response) => {
 
         conn = await pool.getConnection()//Realizamos la conexión
         //generamos la consulta
-        const [userExist] = await conn.query(`SELECT Usuario FROM Usuarios WHERE Usuario = '${Usuario}'`, (error) =>{if(error) throw error})
+        const [userExist] = await conn.query(modelUsuarios.queryUserExists, [Usuario], (error) =>{if(error) throw error})
         
         if (userExist) {
             res.json({msg:`El Usuario: '${Usuario}' ya se encuentra registrado.`})
             return
         }
         //generamos la consulta
-        const result = await conn.query(`INSERT INTO Usuarios(Nombre, Apellidos, Edad, Genero, Usuario, Contrasena, Fecha_Nacimiento, Activo) VALUES ('${Nombre}', '${Apellidos}', ${Edad}, '${Genero || ''}' , '${Usuario}', '${contrasenaCifrada}', '${Fecha_Nacimiento}', '${Activo}')`, (error) => {if(error) throw error})
+        const result = await conn.query( modelUsuarios.queryAddUser, [Nombre, Apellidos, Edad, Genero, Usuario, Contrasena, Fecha_Nacimiento, Activo], (error) => {if(error) throw error})
 
         if (result.affectedRows === 0) {//En caso de no haber resgistros lo informamos
             res.status(404).json({msg: `No se pudo agregar el usuarios con el Nombre ${Nombre}`})
@@ -125,7 +125,7 @@ const updateUserByUser = async (req = request, res = response) => {
     try {
         conn = await pool.getConnection()//Realizamos la conexión
 
-        const [userExist] = await conn.query(`SELECT Usuario FROM Usuarios WHERE Usuario = '${Usuario}'`)
+        const [userExist] = await conn.query(modelUsuarios.queryUserExists, [Usuario])
         
         //generamos la consulta
             if(!userExist){ 
@@ -160,7 +160,7 @@ const signIn = async (req = request, res = response) => {
     try {
         conn = await pool.getConnection()//Realizamos la conexión
         //generamos la consulta
-        const [user] = await conn.query(`SELECT Contrasena, Activo FROM Usuarios WHERE Usuario = '${Usuario}'`, (error) => {if(error) throw error})
+        const [user] = await conn.query(modelUsuarios.querySignIn, [Usuario], (error) => {if(error) throw error})
         
         if(!user){
             res.status(403).json({msg:"El usuario o contraseña que se ingresó no son válidos."})
@@ -194,12 +194,13 @@ const changePass = async (req = request, res = response) => {
     try {
         conn = await pool.getConnection()
 
-        const [pass] = await conn.query(`SELECT Contrasena, Usuario FROM Usuarios WHERE Usuario = '${Usuario}'`, (error) => {if(error) throw error})
+        const [pass] = await conn.query( `SELECT Contrasena, Usuario FROM Usuarios WHERE Usuario = ?`, [Usuario], (error) => {if(error) throw error})
         if(!pass){
             res.status(403).json({msg:"Datos Invalidos"})
             return
         }
         const passValid = bcryptjs.compareSync(Contrasena, pass.Contrasena)
+        console.log(passValid)
         const salt = bcryptjs.genSaltSync()
         const contrasenaCifrada = bcryptjs.hashSync(nuevaContrasena, salt)
 
