@@ -1,16 +1,15 @@
 const { request, response } = require("express");
-const { query } = require("../db/connection");
 const bcryptjs = require("bcryptjs")
 const pool = require("../db/connection");
 const modelUsuarios = require("../models/usuarios");
 
 const getUsers = async (req = request, res = response) => {
-    let conn;
+    let conn
 
     try {
         conn = await pool.getConnection()//Realizamos la conexión
 
-        const [users] = await conn.query(modelUsuarios.queryGetUsers, (error) => {if(error) throw error})
+        const users = await conn.query("SELECT * FROM Usuarios", (error) => {if(error) throw error})
 
         if (users.length === 0) {//En caso de no haber resgistros lo informamos
             res.status(404).json({msg: "No exiten usuarios registrados"})
@@ -74,7 +73,6 @@ const deleteUserByID = async (req = request, res = response) => {
     }finally{
         if (conn) conn.end()//Termina la conexión
     }
-
 }
 const addUser = async (req = request, res = response) => {
     const {Nombre, Apellidos, Edad, Genero = '', Usuario, Contrasena, Fecha_Nacimiento = '1990-01-01', Activo} = req.body//URI params
