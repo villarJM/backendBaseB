@@ -1,7 +1,7 @@
 const { request, response } = require("express");
 const bcryptjs = require("bcryptjs")
 const pool = require("../db/connection");
-const modelUsuarios = require("../models/usuarios");
+const {modelUsuarios, updateUsuario} = require("../models/usuarios");
 
 const getUsers = async (req = request, res = response) => {
     let conn
@@ -130,7 +130,8 @@ const updateUserByUser = async (req = request, res = response) => {
                 res.json({msg:`El usuario ${Usuario} no existe.`})
                 return
             }
-            const result = await conn.query(`UPDATE Usuarios SET Nombre = '${Nombre}', Apellidos = '${Apellidos}', Edad = ${Edad}, ${Genero ? `Genero = '${Genero}',` : ''} Fecha_Nacimiento = '${Fecha_Nacimiento}' WHERE Usuario = '${Usuario}'`, (error) => {if (error) throw error})
+            const result = await conn.query(updateUsuario(Nombre, 
+                Apellidos, Edad, Genero, Usuario, Fecha_Nacimiento), (error) => {if (error) throw error})
 
             if (result.affectedRows === 0) {//En caso de no haber resgistros lo informamos
                 res.status(404).json({msg: `No se pudo agregar el usuarios con el Nombre ${Nombre}`})
@@ -192,7 +193,7 @@ const changePass = async (req = request, res = response) => {
     try {
         conn = await pool.getConnection()
 
-        const [pass] = await conn.query( `SELECT Contrasena, Usuario FROM Usuarios WHERE Usuario = ?`, [Usuario], (error) => {if(error) throw error})
+        const [pass] = await conn.query(modelUsuarios.queryCPUserExits, [Usuario], (error) => {if(error) throw error})
         if(!pass){
             res.status(403).json({msg:"Datos Invalidos"})
             return
@@ -207,7 +208,7 @@ const changePass = async (req = request, res = response) => {
             return
         }
         
-        const updpass = await conn.query(`UPDATE Usuarios SET Contrasena = '${contrasenaCifrada}' WHERE Usuario = '${Usuario}'`, (error) => {if(error) throw error})
+        const updpass = await conn.query(modelUsuarios.queryChangePass, [contrasenaCifrada, Usuario], (error) => {if(error) throw error})
         res.json({msg:`La contraseña se ha cambiado correctamente.`})
     } catch (error) {
         console.log(error)
